@@ -7,28 +7,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Подключаем Tone.js для генерации звуков -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Темная тема для видеоредактора */
+            background-color: #0f172a;
             color: #e2e8f0;
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Кастомный скроллбар для таймлайна */
-        ::-webkit-scrollbar {
-            height: 6px;
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e293b; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #475569; 
-            border-radius: 10px;
-        }
+        ::-webkit-scrollbar { height: 6px; width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
 
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
@@ -36,13 +29,9 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Анимация сканирования ИИ */
         .ai-scan-line {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
+            top: 0; left: 0; width: 100%; height: 2px;
             background: #3b82f6;
             box-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6;
             animation: scan 2s linear infinite;
@@ -57,9 +46,7 @@
             100% { top: 100%; opacity: 0; }
         }
 
-        .pulse-glow {
-            animation: pulseGlow 2s infinite;
-        }
+        .pulse-glow { animation: pulseGlow 2s infinite; }
 
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
@@ -67,10 +54,7 @@
             100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
-        /* Стили для загрузчика файла */
-        input[type="file"] {
-            display: none;
-        }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -83,17 +67,21 @@
             </div>
             <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">MagicCut AI</h1>
         </div>
-        <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
-            <i class="fa-solid fa-gear"></i>
-        </button>
+        <div class="flex gap-3">
+            <button id="sound-toggle" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 text-slate-400">
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+            <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
     </header>
 
     <!-- Main Workspace -->
     <main class="flex-1 flex flex-col relative overflow-hidden">
         
-        <!-- Video Preview Area -->
         <div class="flex-1 relative flex items-center justify-center bg-black p-2 sm:p-4">
-            <!-- Initial Upload State -->
+            <!-- Initial Upload -->
             <div id="upload-state" class="w-full max-w-md border-2 border-dashed border-slate-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition glass-panel" onclick="document.getElementById('video-upload').click()">
                 <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl text-blue-400 mb-4 shadow-lg pulse-glow">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -106,17 +94,16 @@
                 <input type="file" id="video-upload" accept="video/mp4,video/x-m4v,video/*" onchange="handleVideoUpload(event)">
             </div>
 
-            <!-- Video Player State (Hidden initially) -->
+            <!-- Player -->
             <div id="player-state" class="hidden w-full h-full flex flex-col items-center justify-center relative">
                 <div class="relative w-full max-w-3xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
                     <video id="main-video" class="w-full h-full object-contain" playsinline controls></video>
-                    <!-- AI Scan Line effect during processing -->
                     <div id="ai-scanner" class="ai-scan-line"></div>
                 </div>
             </div>
         </div>
 
-        <!-- AI Tools Panel (Hidden initially) -->
+        <!-- AI Tools Panel -->
         <div id="tools-panel" class="hidden glass-panel rounded-t-3xl border-t border-slate-700 p-4 sm:p-6 pb-8 transition-transform duration-300 transform translate-y-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
             <div class="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-4"></div>
             
@@ -128,70 +115,79 @@
                     <span class="font-semibold text-sm">Сделать Рекламу</span>
                 </button>
                 
-                <button onclick="startAiProcess('Shorts / Reels')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition transform hover:scale-105 active:scale-95 border border-purple-400/30">
-                    <i class="fa-solid fa-mobile-screen text-2xl text-white"></i>
-                    <span class="font-semibold text-sm">В формат Shorts</span>
+                <button onclick="startAiProcess('Динамичный монтаж')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition transform hover:scale-105 active:scale-95 border border-purple-400/30">
+                    <i class="fa-solid fa-wand-magic-sparkles text-2xl text-white"></i>
+                    <span class="font-semibold text-sm">Авто-монтаж</span>
                 </button>
             </div>
 
-            <button onclick="startAiProcess('Умная нарезка (удаление тишины)')" class="w-full glass-panel bg-slate-800/80 hover:bg-slate-700 rounded-xl p-3 flex items-center justify-center gap-3 transition active:scale-95 mb-4">
+            <button onclick="startAiProcess('Умная нарезка (удаление тишины)')" class="w-full glass-panel bg-slate-800/80 hover:bg-slate-700 rounded-xl p-3 flex items-center justify-center gap-3 transition active:scale-95 mb-4 border border-slate-600">
                 <i class="fa-solid fa-scissors text-blue-400"></i>
-                <span class="font-semibold">Вырезать скучные моменты</span>
+                <span class="font-semibold text-sm">Вырезать скучные моменты (Тишину)</span>
             </button>
-
-            <!-- Mini Timeline Mockup -->
-            <div class="w-full bg-slate-900 rounded-lg p-2 h-16 flex items-center gap-1 overflow-x-auto border border-slate-800 relative">
-                <!-- Timeline clips will be generated here -->
-                <div class="h-full bg-blue-900/50 border border-blue-500 rounded-md min-w-[60px] flex-1 relative overflow-hidden">
-                     <img src="https://placehold.co/100x40/1e293b/475569?text=Raw" class="w-full h-full object-cover opacity-50" alt="clip">
-                </div>
-                <!-- Playhead -->
-                <div class="absolute top-0 bottom-0 w-0.5 bg-red-500 left-1/4 z-10">
-                    <div class="w-2 h-2 bg-red-500 rounded-full absolute -top-1 -left-[3px]"></div>
-                </div>
-            </div>
         </div>
     </main>
 
     <!-- Settings Bottom Sheet -->
     <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-end sm:justify-center transition-opacity">
-        <div id="settings-panel" class="bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border-t border-slate-700 p-6 flex flex-col gap-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transform transition-transform duration-300 translate-y-full">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div id="settings-panel" class="bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border-t border-slate-700 p-6 flex flex-col gap-5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transform transition-transform duration-300 translate-y-full max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 sticky top-0 bg-slate-900 z-10">
                 <h2 class="text-xl font-bold">Настройки проекта</h2>
                 <button onclick="closeSettings()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 transition active:scale-90">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <!-- Настройка музыки -->
+            <!-- Формат видео -->
             <div>
-                <label class="block text-sm font-semibold text-slate-400 mb-3">Фоновая музыка 🎵</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="setting-btn active bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium border border-blue-500 transition active:scale-95" onclick="selectSetting(this, 'music', 'Энергичная')">Энергичная</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2.5 text-sm font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'music', 'Спокойная')">Спокойная</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2.5 text-sm font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95 col-span-2" onclick="selectSetting(this, 'music', 'Без музыки')">Без музыки (Только голос)</button>
+                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Формат видео 📱</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="setting-btn active bg-pink-600 text-white rounded-lg py-2 text-xs font-medium border border-pink-500 transition active:scale-95" onclick="selectSetting(this, 'aspectRatio', '9:16 (Reels)')">9:16 Reels</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'aspectRatio', '16:9 (YouTube)')">16:9 YouTube</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'aspectRatio', '1:1 (Квадрат)')">1:1 Квадрат</button>
                 </div>
             </div>
 
-            <!-- Настройка субтитров -->
+            <!-- Переходы -->
             <div>
-                <label class="block text-sm font-semibold text-slate-400 mb-3">Стиль субтитров 📝</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Стиль склеек 🎞</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="setting-btn active bg-green-600 text-white rounded-lg py-2 text-xs font-medium border border-green-500 transition active:scale-95" onclick="selectSetting(this, 'transition', 'Резкие (Динамика)')">Резкие</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'transition', 'Плавные (Кино)')">Плавные</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'transition', 'Глитч (Тренды)')">Глитч</button>
+                </div>
+            </div>
+
+            <!-- Музыка -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Фоновая музыка 🎵</label>
                 <div class="grid grid-cols-2 gap-2">
-                    <button class="setting-btn active bg-purple-600 text-white rounded-lg py-2.5 text-sm font-medium border border-purple-500 transition active:scale-95" onclick="selectSetting(this, 'subs', 'Динамичные (Желтые)')">Динамичные (Reels)</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2.5 text-sm font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'subs', 'Строгие (Белые)')">Строгие (YouTube)</button>
+                    <button class="setting-btn active bg-blue-600 text-white rounded-lg py-2 text-xs font-medium border border-blue-500 transition active:scale-95" onclick="selectSetting(this, 'music', 'Энергичная')">Энергичная</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'music', 'Спокойная')">Спокойная</button>
+                    <button data-col="2" class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95 col-span-2" onclick="selectSetting(this, 'music', 'Без музыки')">Без музыки (Только голос)</button>
+                </div>
+            </div>
+
+            <!-- Субтитры -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Стиль субтитров 📝</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="setting-btn active bg-purple-600 text-white rounded-lg py-2 text-xs font-medium border border-purple-500 transition active:scale-95" onclick="selectSetting(this, 'subs', 'Динамичные (Желтые)')">Reels (Желтые)</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95" onclick="selectSetting(this, 'subs', 'Строгие (Белые)')">Строгие (Белые)</button>
                 </div>
             </div>
             
             <!-- Логотип -->
             <div>
-                <label class="block text-sm font-semibold text-slate-400 mb-3">Водяной знак / Логотип ©</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Водяной знак ©</label>
                 <div class="flex items-center gap-3">
-                    <div id="logo-preview" class="w-14 h-14 rounded-xl bg-slate-800 border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-500 overflow-hidden">
-                        <i class="fa-solid fa-image text-xl"></i>
+                    <div id="logo-preview" class="w-12 h-12 rounded-xl bg-slate-800 border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-500 overflow-hidden shrink-0">
+                        <i class="fa-solid fa-image"></i>
                     </div>
                     <div class="flex-1">
-                        <button class="w-full bg-slate-800 hover:bg-slate-700 text-sm font-semibold py-2.5 px-4 rounded-xl border border-slate-600 transition active:scale-95" onclick="document.getElementById('logo-upload').click()">
-                            Выбрать картинку
+                        <button class="w-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95" onclick="document.getElementById('logo-upload').click()">
+                            Загрузить свой логотип
                         </button>
                     </div>
                     <input type="file" id="logo-upload" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
@@ -199,172 +195,145 @@
             </div>
 
             <button onclick="closeSettings()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition active:scale-95">
-                Сохранить и закрыть
+                Применить настройки
             </button>
         </div>
     </div>
 
-    <!-- AI Processing Overlay Modal -->
-    <div id="processing-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-6 text-center">
+    <!-- AI Processing Modal -->
+    <div id="processing-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-6 text-center">
         <div class="w-24 h-24 relative mb-6">
             <svg class="animate-spin w-full h-full text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="#3b82f6" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-                <i class="fa-solid fa-brain text-3xl text-blue-400"></i>
+                <i class="fa-solid fa-microchip text-3xl text-blue-400"></i>
             </div>
         </div>
         
-        <h2 id="process-title" class="text-2xl font-bold mb-2">Анализ видео ИИ...</h2>
-        <p id="process-desc" class="text-slate-400 mb-8 max-w-xs">Отправка на мощные сервера для обработки машинным зрением.</p>
+        <h2 id="process-title" class="text-2xl font-bold mb-2">Отправка на сервер...</h2>
+        <p id="process-desc" class="text-slate-400 mb-8 max-w-xs text-sm">Подготовка медиафайлов для нейросетей</p>
 
-        <!-- Progress Bar -->
-        <div class="w-full max-w-sm bg-slate-800 rounded-full h-3 mb-2 overflow-hidden shadow-inner">
-            <div id="process-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full max-w-sm bg-slate-800 rounded-full h-2 mb-3 overflow-hidden shadow-inner">
+            <div id="process-bar" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <div id="process-percent" class="text-sm font-semibold text-blue-400">0%</div>
+        <div id="process-percent" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">0%</div>
     </div>
 
-    <!-- Result Overlay -->
+    <!-- Result Modal -->
     <div id="result-modal" class="fixed inset-0 bg-slate-900 z-50 hidden flex-col">
-        <header class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900">
-            <button onclick="closeResult()" class="text-slate-400 hover:text-white text-xl p-2">
-                <i class="fa-solid fa-xmark"></i>
+        <header class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900 shadow-md z-10">
+            <button onclick="closeResult()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full">
+                <i class="fa-solid fa-arrow-left"></i>
             </button>
-            <h2 class="font-bold">Готовый проект</h2>
-            <button class="bg-green-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm">
-                Сохранить
+            <h2 class="font-bold">Готово!</h2>
+            <button class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition">
+                <i class="fa-solid fa-download mr-1"></i> Сохранить
             </button>
         </header>
         
         <div class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
-            <div class="w-full aspect-video bg-black rounded-lg border border-slate-700 flex items-center justify-center relative overflow-hidden">
-                <i class="fa-solid fa-play text-4xl text-white/50"></i>
-                <div class="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs">Готовое видео (Превью)</div>
+            <div class="w-full aspect-video bg-black rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden shadow-2xl">
+                <i class="fa-solid fa-play text-4xl text-white/40 hover:text-white/80 transition cursor-pointer hover:scale-110"></i>
+                <div class="absolute bottom-3 right-3 bg-black/70 backdrop-blur px-2 py-1 rounded text-xs border border-white/10">Предпросмотр</div>
             </div>
             
-            <div class="glass-panel p-4 rounded-xl">
-                <h3 class="font-bold text-green-400 mb-2"><i class="fa-solid fa-check-circle mr-1"></i> ИИ успешно смонтировал ролик!</h3>
-                <ul class="text-sm text-slate-300 space-y-2 mt-3" id="result-list">
-                    <li><i class="fa-solid fa-scissors text-slate-500 w-5"></i> Удалено 12 пауз и вздохов</li>
-                    <li><i class="fa-solid fa-wand-magic text-slate-500 w-5"></i> Добавлена цветокоррекция</li>
-                    <li><i class="fa-solid fa-music text-slate-500 w-5"></i> <span id="res-music">Наложена фоновая музыка</span></li>
-                    <li><i class="fa-solid fa-closed-captioning text-slate-500 w-5"></i> <span id="res-subs">Сгенерированы динамичные субтитры</span></li>
-                    <li id="res-logo-item" class="hidden"><i class="fa-solid fa-copyright text-slate-500 w-5"></i> Наложен ваш водяной знак</li>
+            <div class="glass-panel p-5 rounded-xl border border-green-500/30 bg-green-900/10">
+                <h3 class="font-bold text-green-400 mb-3 text-lg"><i class="fa-solid fa-check-double mr-2"></i>Нейросеть завершила работу</h3>
+                <p class="text-xs text-slate-400 mb-4 pb-4 border-b border-slate-700">Мы применили ваши настройки. Вот что было сделано:</p>
+                
+                <ul class="text-sm text-slate-200 space-y-3" id="result-list">
+                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-blue-400"><i class="fa-solid fa-crop-simple"></i></div> <span id="res-aspect">Формат: 9:16</span></li>
+                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-red-400"><i class="fa-solid fa-scissors"></i></div> <span>Вырезано 14 пауз и вздохов</span></li>
+                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-green-400"><i class="fa-solid fa-film"></i></div> <span id="res-trans">Переходы: Резкие</span></li>
+                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-pink-400"><i class="fa-solid fa-music"></i></div> <span id="res-music">Музыка: Энергичная</span></li>
+                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-purple-400"><i class="fa-solid fa-closed-captioning"></i></div> <span id="res-subs">Субтитры: Желтые (Динамика)</span></li>
+                    <li id="res-logo-item" class="hidden flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-yellow-400"><i class="fa-solid fa-copyright"></i></div> <span>Ваш водяной знак добавлен</span></li>
                 </ul>
             </div>
 
-            <button onclick="closeResult()" class="mt-auto bg-slate-800 border border-slate-700 py-3 rounded-xl font-semibold w-full hover:bg-slate-700 active:scale-95 transition">
-                Вернуться к редактированию
+            <button onclick="closeResult()" class="mt-4 bg-slate-800 border border-slate-700 py-3.5 rounded-xl font-semibold w-full hover:bg-slate-700 active:scale-95 transition text-slate-300">
+                Создать новый проект
             </button>
         </div>
     </div>
 
     <script>
+        // === Настройки Звука ===
+        let soundEnabled = false;
+        let bgSynth, errorSynth, successSynth;
+
+        async function initAudio() {
+            await Tone.start();
+            
+            bgSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 }
+            }).toDestination();
+            bgSynth.volume.value = -15;
+
+            successSynth = new Tone.PolySynth(Tone.Synth, {
+                envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 1 }
+            }).toDestination();
+            successSynth.volume.value = -10;
+        }
+
+        async function toggleSound() {
+            const btn = document.getElementById('sound-toggle');
+            if (!soundEnabled) {
+                await initAudio();
+                soundEnabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-volume-high text-blue-400"></i>';
+                btn.classList.add('bg-blue-900/30', 'border', 'border-blue-500/50');
+                
+                Tone.Transport.scheduleRepeat((time) => {
+                    if(soundEnabled) {
+                        const chords = [["C3", "E3", "G3"], ["A2", "C3", "E3"], ["F2", "A2", "C3"], ["G2", "B2", "D3"]];
+                        const chord = chords[Math.floor(Math.random() * chords.length)];
+                        bgSynth.triggerAttackRelease(chord, "2n", time);
+                    }
+                }, "4n");
+                Tone.Transport.start();
+            } else {
+                soundEnabled = false;
+                Tone.Transport.stop();
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-slate-400"></i>';
+                btn.classList.remove('bg-blue-900/30', 'border', 'border-blue-500/50');
+            }
+        }
+
+        function playSuccessSound() {
+            if (soundEnabled && successSynth) {
+                successSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n");
+            }
+        }
+
+        // === Логика Интерфейса ===
         const uploadState = document.getElementById('upload-state');
         const playerState = document.getElementById('player-state');
         const toolsPanel = document.getElementById('tools-panel');
         const videoElement = document.getElementById('main-video');
         const scanner = document.getElementById('ai-scanner');
 
-        // Обработка загрузки видео
         function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                // Создаем локальную ссылку на файл, чтобы показать его в браузере
                 const videoURL = URL.createObjectURL(file);
                 videoElement.src = videoURL;
                 
-                // Переключаем интерфейс
                 uploadState.classList.add('hidden');
                 playerState.classList.remove('hidden');
                 toolsPanel.classList.remove('hidden');
 
-                // Пытаемся воспроизвести видео
-                videoElement.play().catch(e => console.log("Автозапуск заблокирован браузером"));
+                videoElement.play().catch(() => console.log("Автозапуск отменен"));
             }
         }
 
-        // Симуляция процесса работы ИИ (Backend Simulation)
-        function startAiProcess(taskName) {
-            videoElement.pause();
-            scanner.style.display = 'block'; // Включаем эффект сканирования поверх видео
-            
-            const modal = document.getElementById('processing-modal');
-            const title = document.getElementById('process-title');
-            const desc = document.getElementById('process-desc');
-            const bar = document.getElementById('process-bar');
-            const percentText = document.getElementById('process-percent');
-            
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            // Этапы фейковой загрузки
-            const steps = [
-                { title: `Анализ: ${taskName}`, desc: "ИИ распознает лица, голос и ключевые объекты...", progress: 15 },
-                { title: "Нарезка сцен", desc: "Удаление тишины, неудачных дублей...", progress: 45 },
-                { title: "Генерация субтитров", desc: "Распознавание речи в текст...", progress: 65 },
-                { title: "Эффекты и переходы", desc: "Добавление динамики, масштабирования...", progress: 85 },
-                { title: "Рендеринг", desc: "Сборка финального проекта...", progress: 100 }
-            ];
-
-            let currentStep = 0;
-            bar.style.width = '0%';
-            percentText.innerText = '0%';
-
-            // Запускаем шаги с задержкой
-            const interval = setInterval(() => {
-                if (currentStep < steps.length) {
-                    title.innerText = steps[currentStep].title;
-                    desc.innerText = steps[currentStep].desc;
-                    bar.style.width = `${steps[currentStep].progress}%`;
-                    
-                    // Анимируем счетчик процентов
-                    let start = parseInt(percentText.innerText);
-                    let target = steps[currentStep].progress;
-                    animateValue(percentText, start, target, 500);
-
-                    currentStep++;
-                } else {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        scanner.style.display = 'none';
-                        showResult();
-                    }, 1000);
-                }
-            }, 1800); // Смена этапа каждые 1.8 секунды
-        }
-
-        // Анимация бегущих цифр
-        function animateValue(obj, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        function showResult() {
-            document.getElementById('processing-modal').classList.add('hidden');
-            document.getElementById('processing-modal').classList.remove('flex');
-            
-            document.getElementById('result-modal').classList.remove('hidden');
-            document.getElementById('result-modal').classList.add('flex');
-        }
-
-        function closeResult() {
-            document.getElementById('result-modal').classList.add('hidden');
-            document.getElementById('result-modal').classList.remove('flex');
-        }
-
-        // Управление настройками
+        // === Глобальные Настройки Проекта ===
         let projectSettings = {
+            aspectRatio: '9:16 (Reels)',
+            transition: 'Резкие (Динамика)',
             music: 'Энергичная',
             subs: 'Динамичные (Желтые)',
             logoLoaded: false
@@ -375,21 +344,13 @@
             const panel = document.getElementById('settings-panel');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
-            // Задержка для плавного выезда панели снизу
-            setTimeout(() => {
-                panel.classList.remove('translate-y-full');
-            }, 10);
+            setTimeout(() => panel.classList.remove('translate-y-full'), 10);
         }
 
         function closeSettings() {
             const modal = document.getElementById('settings-modal');
             const panel = document.getElementById('settings-panel');
-            
-            // Сначала убираем панель вниз
             panel.classList.add('translate-y-full');
-            
-            // После завершения анимации прячем модалку целиком
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -397,24 +358,24 @@
         }
 
         function selectSetting(btnElement, category, value) {
-            // Находим все кнопки внутри текущей группы (сетки)
             const siblings = btnElement.parentElement.querySelectorAll('.setting-btn');
             
-            // Сбрасываем стили у всех кнопок в группе
+            // Сбрасываем стили всех кнопок в группе до базовых
             siblings.forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'bg-purple-600', 'text-white', 'border-blue-500', 'border-purple-500', 'active');
-                btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                let isColSpan = btn.getAttribute('data-col') === '2';
+                btn.className = `setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 hover:bg-slate-700 transition active:scale-95 ${isColSpan ? 'col-span-2' : ''}`;
             });
             
-            // Применяем активный стиль к нажатой кнопке
-            btnElement.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+            // Определяем цвет активации в зависимости от категории
+            let activeClasses = '';
+            if (category === 'aspectRatio') activeClasses = 'bg-pink-600 text-white border-pink-500 active';
+            else if (category === 'transition') activeClasses = 'bg-green-600 text-white border-green-500 active';
+            else if (category === 'music') activeClasses = 'bg-blue-600 text-white border-blue-500 active';
+            else if (category === 'subs') activeClasses = 'bg-purple-600 text-white border-purple-500 active';
             
-            // Используем разные цвета для разных категорий
-            if (category === 'subs') {
-                btnElement.classList.add('bg-purple-600', 'text-white', 'border-purple-500', 'active');
-            } else {
-                btnElement.classList.add('bg-blue-600', 'text-white', 'border-blue-500', 'active');
-            }
+            // Применяем активный стиль
+            let isColSpan = btnElement.getAttribute('data-col') === '2';
+            btnElement.className = `setting-btn ${activeClasses} rounded-lg py-2 text-xs font-medium border transition active:scale-95 ${isColSpan ? 'col-span-2' : ''}`;
             
             // Сохраняем настройку
             projectSettings[category] = value;
@@ -425,31 +386,98 @@
             if (file) {
                 const url = URL.createObjectURL(file);
                 const preview = document.getElementById('logo-preview');
-                // Вставляем картинку вместо иконки
                 preview.innerHTML = `<img src="${url}" class="w-full h-full object-cover" />`;
-                preview.classList.remove('border-dashed');
-                preview.classList.add('border-solid');
+                preview.classList.remove('border-dashed', 'border-slate-600', 'p-2');
                 projectSettings.logoLoaded = true;
             }
         }
 
-        // Обновляем текст в финальном экране в зависимости от настроек
-        // Вызовем это внутри showResult()
-        const originalShowResult = showResult;
-        showResult = function() {
-            // Подставляем выбранные настройки
-            document.getElementById('res-music').innerText = `Музыка: ${projectSettings.music}`;
-            document.getElementById('res-subs').innerText = `Субтитры: ${projectSettings.subs}`;
+        // === Симуляция работы нейросети ===
+        function startAiProcess(taskName) {
+            videoElement.pause();
+            scanner.style.display = 'block'; 
+            
+            const modal = document.getElementById('processing-modal');
+            const title = document.getElementById('process-title');
+            const desc = document.getElementById('process-desc');
+            const bar = document.getElementById('process-bar');
+            const percentText = document.getElementById('process-percent');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            const steps = [
+                { title: `Загрузка...`, desc: "Передача медиа на защищенный сервер", progress: 12 },
+                { title: "Computer Vision", desc: "OpenCV ищет лица и объекты в кадре...", progress: 34 },
+                { title: "Анализ звука", desc: "Удаление тишины и вздохов (-30dB)...", progress: 58 },
+                { title: "Whisper AI", desc: "Распознавание речи и генерация текста...", progress: 77 },
+                { title: "Рендеринг", desc: "Сборка проекта с выбранными эффектами...", progress: 100 }
+            ];
+
+            let currentStep = 0;
+            bar.style.width = '0%';
+            percentText.innerText = '0%';
+
+            const interval = setInterval(() => {
+                if (currentStep < steps.length) {
+                    title.innerText = steps[currentStep].title;
+                    desc.innerText = steps[currentStep].desc;
+                    bar.style.width = `${steps[currentStep].progress}%`;
+                    
+                    let start = parseInt(percentText.innerText);
+                    let target = steps[currentStep].progress;
+                    animateValue(percentText, start, target, 400);
+
+                    currentStep++;
+                } else {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        scanner.style.display = 'none';
+                        showResult();
+                    }, 800);
+                }
+            }, 1500); 
+        }
+
+        function animateValue(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function showResult() {
+            document.getElementById('processing-modal').classList.add('hidden');
+            document.getElementById('processing-modal').classList.remove('flex');
+            
+            // Подставляем выбранные настройки в финальный экран
+            document.getElementById('res-aspect').innerText = `Формат видео: ${projectSettings.aspectRatio}`;
+            document.getElementById('res-trans').innerText = `Стиль склеек: ${projectSettings.transition}`;
+            document.getElementById('res-music').innerText = `Аудио-фон: ${projectSettings.music}`;
+            document.getElementById('res-subs').innerText = `Текст: ${projectSettings.subs}`;
             
             if (projectSettings.logoLoaded) {
                 document.getElementById('res-logo-item').classList.remove('hidden');
+                document.getElementById('res-logo-item').classList.add('flex');
             } else {
                 document.getElementById('res-logo-item').classList.add('hidden');
+                document.getElementById('res-logo-item').classList.remove('flex');
             }
-            
-            originalShowResult(); // Вызываем оригинальную функцию
-        };
 
+            document.getElementById('result-modal').classList.remove('hidden');
+            document.getElementById('result-modal').classList.add('flex');
+            
+            playSuccessSound(); // Радостный звук завершения
+        }
+
+        function closeResult() {
+            document.getElementById('result-modal').classList.add('hidden');
+            document.getElementById('result-modal').classList.remove('flex');
+        }
     </script>
 </body>
-  </html>
+                        </html>
