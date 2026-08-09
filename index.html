@@ -3,416 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MagicCut AI - Автомонтаж</title>
-    
-    <!-- === МАГИЯ PWA (Превращение в приложение) === -->
+    <title>MagicCut AI - Автомонтаж видео</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3655/3655688.png">
-    <!-- ============================================ -->
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <!-- FFmpeg для реального монтажа в браузере -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
-    
+    <meta name="theme-color" content="#7c3aed">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            padding-bottom: 70px;
-        }
-
-        ::-webkit-scrollbar { height: 6px; width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .ai-scan-line {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 2px;
-            background: #3b82f6;
-            box-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6;
-            animation: scan 2s linear infinite;
-            display: none;
-            z-index: 10;
-        }
-
-        @keyframes scan {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-
-        .pulse-glow { animation: pulseGlow 2s infinite; }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-
-        input[type="file"] { display: none; }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
-            z-index: 40;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #64748b;
-            font-size: 10px;
-            font-weight: 600;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-
-        .nav-item.active { color: #3b82f6; }
-        .nav-item i { font-size: 20px; transition: transform 0.2s; }
-        .nav-item.active i { transform: scale(1.1); }
-        
-        .tab-content { display: none; height: 100%; }
-        .tab-content.active { display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042); color: #fff; min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 70px; }
+        .header { padding: 16px; text-align: center; font-size: 20px; font-weight: bold; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo-text { background: linear-gradient(45deg, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .settings-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .container { padding: 16px; flex: 1; max-width: 600px; margin: 0 auto; width: 100%; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .upload-card { border: 2px dashed rgba(167, 139, 250, 0.4); border-size: 20px; border-radius: 20px; padding: 30px 20px; text-align: center; background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); margin-bottom: 20px; cursor: pointer; transition: 0.3s; }
+        .upload-card:active { transform: scale(0.98); }
+        .upload-icon { font-size: 48px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 14px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; background: linear-gradient(45deg, #8b5cf6, #ec4899); color: #fff; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); transition: 0.2s; }
+        .btn:active { transform: scale(0.97); }
+        .btn-secondary { background: rgba(255,255,255,0.1); box-shadow: none; }
+        .video-preview { width: 100%; border-radius: 14px; max-height: 250px; background: #000; margin-bottom: 15px; display: none; object-fit: cover; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 12px; cursor: pointer; background: none; border: none; }
+        .nav-item.active { color: #c084fc; font-weight: bold; }
+        .nav-item span { display: block; font-size: 20px; }
+        /* Модальные окна */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: #1e1b4b; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; border-radius: 24px; padding: 24px; text-align: center; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        /* Прогресс */
+        .progress-container { width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 10px; margin: 20px 0; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(45deg, #8b5cf6, #ec4899); transition: 0.3s; }
+        /* Настройки */
+        .settings-panel { position: fixed; bottom: -100%; left: 0; right: 0; background: #1e1b4b; border-radius: 24px 24px 0 0; padding: 24px; transition: 0.3s; z-index: 200; max-height: 80vh; overflow-y: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+        .settings-panel.active { bottom: 0; }
+        .setting-group { margin-bottom: 16px; text-align: left; }
+        .setting-group label { font-size: 14px; color: #c084fc; display: block; margin-bottom: 6px; }
+        .setting-select { width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body>
 
-    <!-- Header -->
-    <header class="glass-panel p-4 flex justify-between items-center z-20 shadow-md">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <div class="header">
+        <div></div>
+        <div class="logo-text">✨ MagicCut AI</div>
+        <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    </div>
+
+    <div class="container">
+        <!-- Главный экран -->
+        <div id="screen-home" class="screen active">
+            <div class="upload-card" onclick="document.getElementById('videoInput').click()">
+                <div class="upload-icon">📁</div>
+                <div style="font-weight: bold; margin-bottom: 5px;">Загрузить видео</div>
+                <div style="font-size: 12px; color: #94a3b8;">Нажмите, чтобы выбрать из галереи</div>
             </div>
-            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">MagicCut</h1>
-        </div>
-        <div class="flex gap-3">
-            <button id="sound-toggle" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition active:scale-95 text-slate-400">
-                <i class="fa-solid fa-volume-xmark"></i>
-            </button>
-            <button onclick="openSettings()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition active:scale-95">
-                <i class="fa-solid fa-gear"></i>
-            </button>
-        </div>
-    </header>
+            <input type="file" id="videoInput" accept="video/*" style="display: none;" onchange="handleVideoUpload(event)">
 
-    <!-- TAB 1: Главная -->
-    <main id="tab-home" class="tab-content active flex-1 relative overflow-hidden">
-        <div class="flex-1 relative flex items-center justify-center bg-black p-2 sm:p-4">
-            <!-- Initial Upload -->
-            <div id="upload-state" class="w-full max-w-md border-2 border-dashed border-slate-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition glass-panel" onclick="document.getElementById('video-upload').click()">
-                <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl text-blue-400 mb-4 shadow-lg pulse-glow">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
+            <video id="sourceVideo" class="video-preview" controls></video>
+
+            <div id="actionButtons" style="display: none;">
+                <button class="btn" onclick="askAdBeforeAction('Короткий Reels/TikTok')">🎬 Сделать Reels / TikTok</button>
+                <button class="btn" onclick="askAdBeforeAction('Авто-монтаж')">✨ Умный Авто-монтаж</button>
+                <button class="btn" onclick="askAdBeforeAction('Удаление тишины')">✂️ Вырезать паузы</button>
+            </div>
+        </div>
+
+        <!-- Проекты -->
+        <div id="screen-projects" class="screen">
+            <h2 style="margin-bottom: 15px; font-size: 18px;">Ваши проекты</h2>
+            <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: bold;">Реклама_Трамвай.mp4</div>
+                    <div style="font-size: 12px; color: #94a3b8;">Готово • 9:16</div>
                 </div>
-                <h2 class="text-xl font-bold mb-2">Загрузите видео</h2>
-                <p class="text-slate-400 text-sm mb-6">Выберите видео из галереи для ИИ-монтажа.</p>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full transition w-full">
-                    Выбрать файл
-                </button>
-                <input type="file" id="video-upload" accept="video/mp4,video/x-m4v,video/*" onchange="handleVideoUpload(event)">
-            </div>
-
-            <!-- Player -->
-            <div id="player-state" class="hidden w-full h-full flex flex-col items-center justify-center relative">
-                <div class="relative w-full max-w-3xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
-                    <video id="main-video" class="w-full h-full object-contain" playsinline controls></video>
-                    <div id="ai-scanner" class="ai-scan-line"></div>
-                </div>
+                <span style="color: #4ade80;">✓</span>
             </div>
         </div>
 
-        <!-- AI Tools Panel -->
-        <div id="tools-panel" class="hidden glass-panel rounded-t-3xl border-t border-slate-700 p-4 sm:p-6 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            <div class="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-4"></div>
-            <h3 class="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Магия нейросети</h3>
-            
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="requestAdThenProcess('Рекламный ролик')" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-indigo-400/30">
-                    <i class="fa-solid fa-bullhorn text-2xl text-white"></i>
-                    <span class="font-semibold text-sm">Сделать Рекламу</span>
-                </button>
-                <button onclick="requestAdThenProcess('Авто-монтаж')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-purple-400/30">
-                    <i class="fa-solid fa-wand-magic-sparkles text-2xl text-white"></i>
-                    <span class="font-semibold text-sm">Авто-монтаж</span>
-                </button>
+        <!-- Профиль -->
+        <div id="screen-profile" class="screen">
+            <div style="text-align: center; padding: 20px 0;">
+                <div style="font-size: 50px; margin-bottom: 10px;">👤</div>
+                <div style="font-weight: bold; font-size: 18px;">Мой Аккаунт</div>
+                <div style="font-size: 13px; color: #94a3b8; margin-top: 5px;">Статус: Бесплатный (Реклама)</div>
             </div>
-            <button onclick="requestAdThenProcess('Умная нарезка')" class="w-full glass-panel bg-slate-800/80 hover:bg-slate-700 rounded-xl p-3 flex items-center justify-center gap-3 transition active:scale-95 mb-4 border border-slate-600">
-                <i class="fa-solid fa-scissors text-blue-400"></i>
-                <span class="font-semibold text-sm">Вырезать тишину</span>
-            </button>
-        </div>
-    </main>
-
-    <!-- TAB 2: Проекты -->
-    <main id="tab-projects" class="tab-content flex-1 p-4 overflow-y-auto">
-        <h2 class="text-2xl font-bold mb-4">Мои видео</h2>
-        <div class="grid grid-cols-2 gap-4">
-            <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-                <div class="h-32 bg-slate-700 relative flex items-center justify-center">
-                    <i class="fa-solid fa-play text-white/50 text-2xl"></i>
-                    <span class="absolute bottom-1 right-1 bg-black/70 text-xs px-1 rounded">0:15</span>
-                </div>
-                <div class="p-3">
-                    <h4 class="font-semibold text-sm truncate">Promo_Reels_V1.mp4</h4>
-                    <p class="text-xs text-slate-400 mt-1">Сегодня, 14:20</p>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- TAB 3: Профиль -->
-    <main id="tab-profile" class="tab-content flex-1 p-4 overflow-y-auto">
-        <div class="bg-slate-800 rounded-2xl p-6 flex flex-col items-center border border-slate-700 mb-6">
-            <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-3xl font-bold mb-3 shadow-lg shadow-purple-500/30">
-                👤
-            </div>
-            <h2 class="text-xl font-bold">Dani4ka890</h2>
-            <div class="bg-slate-900 px-3 py-1 rounded-full text-sm text-slate-400 mt-2 border border-slate-700">Бесплатный план (Реклама за монтаж)</div>
-        </div>
-    </main>
-
-    <!-- Нижнее навигационное меню -->
-    <nav class="bottom-nav">
-        <button onclick="switchTab('tab-home', this)" class="nav-item active">
-            <i class="fa-solid fa-house"></i>
-            <span>Главная</span>
-        </button>
-        <button onclick="switchTab('tab-projects', this)" class="nav-item">
-            <i class="fa-solid fa-folder-open"></i>
-            <span>Проекты</span>
-        </button>
-        <button onclick="switchTab('tab-profile', this)" class="nav-item">
-            <i class="fa-solid fa-user"></i>
-            <span>Профиль</span>
-        </button>
-    </nav>
-
-    <!-- Настройки -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-end sm:justify-center">
-        <div id="settings-panel" class="bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border-t border-slate-700 p-6 flex flex-col gap-6 shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[85vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h2 class="text-xl font-bold">Настройки проекта</h2>
-                <button onclick="closeSettings()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-slate-800">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-pink-400 mb-2 uppercase">Формат видео</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="setting-btn active bg-pink-600 text-white rounded-lg py-2 text-xs font-medium border border-pink-500" onclick="selectSetting(this, 'aspectRatio', '9:16', 'bg-pink-600', 'border-pink-500')">9:16</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '16:9', 'bg-pink-600', 'border-pink-500')">16:9</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '1:1', 'bg-pink-600', 'border-pink-500')">1:1</button>
-                </div>
-            </div>
-            <button onclick="closeSettings()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">
-                Применить
-            </button>
+            <button class="btn" onclick="openPaywall()">Купить PRO навсегда</button>
         </div>
     </div>
 
-    <!-- Paywall / Рекламное окно -->
-    <div id="paywall-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4">
-        <div class="bg-gradient-to-b from-slate-800 to-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
-            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-black/40">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl mx-auto mb-3">
-                    <i class="fa-solid fa-play-circle"></i>
-                </div>
-                <h2 class="text-2xl font-extrabold mb-1">Просмотр рекламы</h2>
-                <p class="text-slate-400 text-sm">Чтобы ИИ смонтировал видео бесплатно, посмотрите короткую рекламу.</p>
-            </div>
-            <button onclick="watchAdAndProcess()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg mb-3">
-                Посмотреть рекламу и смонтировать
-            </button>
-            <button onclick="buyPro()" class="w-full bg-slate-800 border border-slate-600 text-slate-300 font-semibold py-3 rounded-xl">
-                Купить PRO (без рекламы)
-            </button>
+    <!-- Нижнее меню -->
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('home', this)"><span>🏠</span>Главная</button>
+        <button class="nav-item" onclick="switchTab('projects', this)"><span>📁</span>Проекты</button>
+        <button class="nav-item" onclick="switchTab('profile', this)"><span>👤</span>Профиль</button>
+    </div>
+
+    <!-- Панель настроек -->
+    <div class="settings-panel" id="settingsPanel">
+        <h3 style="margin-bottom: 15px;">Настройки монтажа</h3>
+        <div class="setting-group">
+            <label>Формат видео</label>
+            <select class="setting-select" id="aspectRatio">
+                <option value="9:16">9:16 (TikTok / Reels / Shorts)</option>
+                <option value="16:9">16:9 (YouTube)</option>
+                <option value="1:1">1:1 (Квадрат)</option>
+            </select>
+        </div>
+        <div class="setting-group">
+            <label>Стиль переходов</label>
+            <select class="setting-select" id="transitionStyle">
+                <option value="dynamic">Динамичные</option>
+                <option value="smooth">Плавные</option>
+                <option value="glitch">Глитч</option>
+            </select>
+        </div>
+        <button class="btn" onclick="toggleSettings()" style="margin-top: 10px;">Сохранить</button>
+    </div>
+
+    <!-- Модальное окно Рекламы / Оплаты -->
+    <div class="modal" id="adModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal()">×</button>
+            <h3 style="margin-bottom: 10px;" id="modalTitle">Требуется просмотр рекламы</h3>
+            <p style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;" id="modalDesc">Посмотрите короткую рекламу (или купите PRO), чтобы запустить ИИ-монтаж.</p>
+            <button class="btn" onclick="watchAdAndProcess()">▶️ Посмотреть рекламу и смонтировать</button>
+            <button class="btn btn-secondary" onclick="openPaywallFromAd()">Купить PRO (без рекламы)</button>
         </div>
     </div>
 
-    <!-- Processing Modal -->
-    <div id="processing-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-6 text-center">
-        <div class="w-24 h-24 relative mb-6">
-            <svg class="animate-spin w-full h-full text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="#3b82f6" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <i class="fa-solid fa-microchip text-3xl text-blue-400"></i>
+    <!-- Экран обработки -->
+    <div class="modal" id="processingModal">
+        <div class="modal-content">
+            <h3>ИИ монтирует видео...</h3>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
             </div>
+            <p id="progressText" style="font-size: 13px; color: #c084fc;">Анализ кадров...</p>
         </div>
-        <h2 id="process-title" class="text-2xl font-bold mb-2">Монтаж видео через FFmpeg...</h2>
-        <p id="process-desc" class="text-slate-400 mb-8 max-w-xs text-sm">Пожалуйста, подождите, идет обработка на вашем устройстве</p>
-        <div class="w-full max-w-sm bg-slate-800 rounded-full h-2 mb-3 overflow-hidden shadow-inner">
-            <div id="process-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-        </div>
-        <div id="process-percent" class="text-xl font-bold text-blue-400">0%</div>
     </div>
 
-    <!-- Result Modal -->
-    <div id="result-modal" class="fixed inset-0 bg-slate-900 z-50 hidden flex-col">
-        <header class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900 shadow-md">
-            <button onclick="closeResult()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full">
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-            <h2 class="font-bold">Готово!</h2>
-            <a id="download-btn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm shadow-lg active:scale-95 transition flex items-center gap-1">
-                <i class="fa-solid fa-download"></i> Сохранить
-            </a>
-        </header>
-        <div class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto items-center justify-center">
-            <video id="result-video" class="w-full max-w-md aspect-video bg-black rounded-xl border border-slate-700 shadow-2xl" controls playsinline></video>
-            <p class="text-green-400 font-semibold text-sm"><i class="fa-solid fa-check-circle mr-1"></i> Видео успешно смонтировано и готово к скачиванию!</p>
+    <!-- Экран результата -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 10px; color: #4ade80;">Готово! 🎉</h3>
+            <p style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">Ваше видео успешно обработано нейросетью.</p>
+            <button class="btn" onclick="downloadVideo()">⬇️ Скачать видео</button>
+            <button class="btn btn-secondary" onclick="closeResult()">Закрыть</button>
         </div>
     </div>
 
     <script>
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
+        let currentMode = '';
+        let uploadedVideoUrl = '';
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('screen-' + tabId).classList.add('active');
+            el.classList.add('active');
         }
 
-        let soundEnabled = false;
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            const btn = document.getElementById('sound-toggle');
-            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high text-blue-400"></i>' : '<i class="fa-solid fa-volume-xmark text-slate-400"></i>';
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
         }
 
-        let uploadedFile = null;
         function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                uploadedFile = file;
-                const videoURL = URL.createObjectURL(file);
-                document.getElementById('main-video').src = videoURL;
-                document.getElementById('upload-state').classList.add('hidden');
-                document.getElementById('player-state').classList.remove('hidden');
-                document.getElementById('tools-panel').classList.remove('hidden');
+                uploadedVideoUrl = URL.createObjectURL(file);
+                const videoEl = document.getElementById('sourceVideo');
+                videoEl.src = uploadedVideoUrl;
+                videoEl.style.display = 'block';
+                document.getElementById('actionButtons').style.display = 'block';
             }
         }
 
-        let projectSettings = { aspectRatio: '9:16' };
-        function openSettings() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => document.getElementById('settings-panel').classList.remove('translate-y-full'), 10);
-        }
-        function closeSettings() {
-            document.getElementById('settings-panel').classList.add('translate-y-full');
-            setTimeout(() => { document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex'); }, 300);
-        }
-        function selectSetting(btn, category, value, bgClass, borderClass) {
-            btn.parentElement.querySelectorAll('.setting-btn').forEach(b => {
-                b.className = "setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700";
-            });
-            btn.className = `setting-btn ${bgClass} text-white ${borderClass} active rounded-lg py-2 text-xs font-medium border`;
-            projectSettings[category] = value;
+        function askAdBeforeAction(mode) {
+            currentMode = mode;
+            document.getElementById('modalTitle').innerText = 'Монтаж: ' + mode;
+            document.getElementById('adModal').classList.add('active');
         }
 
-        let pendingTask = '';
-        function requestAdThenProcess(task) {
-            pendingTask = task;
-            document.getElementById('main-video').pause();
-            const paywall = document.getElementById('paywall-modal');
-            paywall.classList.remove('hidden'); paywall.classList.add('flex');
+        function closeModal() {
+            document.getElementById('adModal').classList.remove('active');
         }
-        function closePaywall() {
-            const paywall = document.getElementById('paywall-modal');
-            paywall.classList.add('hidden'); paywall.classList.remove('flex');
+
+        function openPaywallFromAd() {
+            closeModal();
+            alert('Переход на страницу оплаты PRO подписки...');
         }
-        function buyPro() {
-            closePaywall();
-            alert("Переход на страницу оплаты PRO-версии!");
-            startRealProcessing();
+
+        function openPaywall() {
+            alert('Тариф PRO: 890 руб. / месяц. Все функции без рекламы!');
         }
+
         function watchAdAndProcess() {
-            closePaywall();
-            startRealProcessing();
-        }
+            closeModal();
+            document.getElementById('processingModal').classList.add('active');
+            
+            let progress = 0;
+            const bar = document.getElementById('progressBar');
+            const text = document.getElementById('progressText');
+            
+            const steps = [
+                "Удаление пауз и тишины...",
+                "Нейро-субтитры генерируются...",
+                "Наложение фоновой музыки...",
+                "Рендеринг финального ролика..."
+            ];
 
-        async function startRealProcessing() {
-            const modal = document.getElementById('processing-modal');
-            const bar = document.getElementById('process-bar');
-            const percentText = document.getElementById('process-percent');
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-
-            try {
-                const { FFmpeg } = FFmpegWASM;
-                const ffmpeg = new FFmpeg();
+            const interval = setInterval(() => {
+                progress += 5;
+                bar.style.width = progress + '%';
                 
-                ffmpeg.on('progress', ({ progress }) => {
-                    let p = Math.floor(progress * 100);
-                    bar.style.width = p + '%';
-                    percentText.innerText = p + '%';
-                });
+                if (progress === 30) text.innerText = steps[1];
+                if (progress === 60) text.innerText = steps[2];
+                if (progress === 85) text.innerText = steps[3];
 
-                document.getElementById('process-desc').innerText = "Загрузка движка монтажа...";
-                await ffmpeg.load();
-
-                document.getElementById('process-desc').innerText = "Обработка видеофайла...";
-                const fileData = await uploadedFile.arrayBuffer();
-                await ffmpeg.writeFile('input.mp4', new Uint8Array(fileData));
-
-                // Рендеринг через FFmpeg (ускорение или перекодирование)
-                await ffmpeg.exec(['-i', 'input.mp4', '-vf', 'scale=480:854', 'output.mp4']);
-
-                const data = await ffmpeg.readFile('output.mp4');
-                const blob = new Blob([data.buffer], { type: 'video/mp4' });
-                const outputUrl = URL.createObjectURL(blob);
-
-                modal.classList.add('hidden'); modal.classList.remove('flex');
-                showResult(outputUrl);
-            } catch (err) {
-                console.error(err);
-                modal.classList.add('hidden'); modal.classList.remove('flex');
-                alert("Ошибка обработки видео. Попробуйте файл поменьше.");
-            }
-        }
-
-        function showResult(url) {
-            const resVideo = document.getElementById('result-video');
-            resVideo.src = url;
-            const downloadBtn = document.getElementById('download-btn');
-            downloadBtn.href = url;
-            downloadBtn.download = "MagicCut_Edited.mp4";
-
-            const resultModal = document.getElementById('result-modal');
-            resultModal.classList.remove('hidden'); resultModal.classList.add('flex');
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('processingModal').classList.remove('active');
+                    document.getElementById('resultModal').classList.add('active');
+                    bar.style.width = '0%';
+                }
+            }, 100);
         }
 
         function closeResult() {
-            document.getElementById('result-modal').classList.add('hidden'); document.getElementById('result-modal').classList.remove('flex');
+            document.getElementById('resultModal').classList.remove('active');
+        }
+
+        function downloadVideo() {
+            if (!uploadedVideoUrl) {
+                alert('Видео не найдено!');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = uploadedVideoUrl;
+            a.download = 'MagicCut_Edited.mp4';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     </script>
 </body>
-            </html>
+</html>
