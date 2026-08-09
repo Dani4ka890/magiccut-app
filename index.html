@@ -17,6 +17,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- FFmpeg для реального монтажа в браузере -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
     
     <style>
         body {
@@ -26,7 +28,7 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
-            padding-bottom: 70px; /* Отступ для нижнего меню */
+            padding-bottom: 70px;
         }
 
         ::-webkit-scrollbar { height: 6px; width: 4px; }
@@ -66,7 +68,6 @@
 
         input[type="file"] { display: none; }
 
-        /* Стили для нижнего меню */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -92,28 +93,12 @@
             transition: all 0.2s;
         }
 
-        .nav-item.active {
-            color: #3b82f6;
-        }
-
-        .nav-item i {
-            font-size: 20px;
-            transition: transform 0.2s;
-        }
-
-        .nav-item.active i {
-            transform: scale(1.1);
-        }
+        .nav-item.active { color: #3b82f6; }
+        .nav-item i { font-size: 20px; transition: transform 0.2s; }
+        .nav-item.active i { transform: scale(1.1); }
         
-        .tab-content {
-            display: none;
-            height: 100%;
-        }
-        
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-        }
+        .tab-content { display: none; height: 100%; }
+        .tab-content.active { display: flex; flex-direction: column; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -136,7 +121,7 @@
         </div>
     </header>
 
-    <!-- TAB 1: Главная (Создание видео) -->
+    <!-- TAB 1: Главная -->
     <main id="tab-home" class="tab-content active flex-1 relative overflow-hidden">
         <div class="flex-1 relative flex items-center justify-center bg-black p-2 sm:p-4">
             <!-- Initial Upload -->
@@ -162,21 +147,21 @@
         </div>
 
         <!-- AI Tools Panel -->
-        <div id="tools-panel" class="hidden glass-panel rounded-t-3xl border-t border-slate-700 p-4 sm:p-6 pb-8 transition-transform duration-300 transform translate-y-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div id="tools-panel" class="hidden glass-panel rounded-t-3xl border-t border-slate-700 p-4 sm:p-6 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
             <div class="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-4"></div>
             <h3 class="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Магия нейросети</h3>
             
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="openPaywall('Рекламный ролик')" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-indigo-400/30">
+                <button onclick="requestAdThenProcess('Рекламный ролик')" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-indigo-400/30">
                     <i class="fa-solid fa-bullhorn text-2xl text-white"></i>
                     <span class="font-semibold text-sm">Сделать Рекламу</span>
                 </button>
-                <button onclick="openPaywall('Динамичный монтаж')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-purple-400/30">
+                <button onclick="requestAdThenProcess('Авто-монтаж')" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl p-3 flex flex-col items-center justify-center gap-2 shadow-lg transition active:scale-95 border border-purple-400/30">
                     <i class="fa-solid fa-wand-magic-sparkles text-2xl text-white"></i>
                     <span class="font-semibold text-sm">Авто-монтаж</span>
                 </button>
             </div>
-            <button onclick="openPaywall('Умная нарезка')" class="w-full glass-panel bg-slate-800/80 hover:bg-slate-700 rounded-xl p-3 flex items-center justify-center gap-3 transition active:scale-95 mb-4 border border-slate-600">
+            <button onclick="requestAdThenProcess('Умная нарезка')" class="w-full glass-panel bg-slate-800/80 hover:bg-slate-700 rounded-xl p-3 flex items-center justify-center gap-3 transition active:scale-95 mb-4 border border-slate-600">
                 <i class="fa-solid fa-scissors text-blue-400"></i>
                 <span class="font-semibold text-sm">Вырезать тишину</span>
             </button>
@@ -187,7 +172,6 @@
     <main id="tab-projects" class="tab-content flex-1 p-4 overflow-y-auto">
         <h2 class="text-2xl font-bold mb-4">Мои видео</h2>
         <div class="grid grid-cols-2 gap-4">
-            <!-- Проект 1 -->
             <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
                 <div class="h-32 bg-slate-700 relative flex items-center justify-center">
                     <i class="fa-solid fa-play text-white/50 text-2xl"></i>
@@ -196,17 +180,6 @@
                 <div class="p-3">
                     <h4 class="font-semibold text-sm truncate">Promo_Reels_V1.mp4</h4>
                     <p class="text-xs text-slate-400 mt-1">Сегодня, 14:20</p>
-                </div>
-            </div>
-            <!-- Проект 2 -->
-            <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-                <div class="h-32 bg-slate-700 relative flex items-center justify-center">
-                    <i class="fa-solid fa-play text-white/50 text-2xl"></i>
-                    <span class="absolute bottom-1 right-1 bg-black/70 text-xs px-1 rounded">1:02</span>
-                </div>
-                <div class="p-3">
-                    <h4 class="font-semibold text-sm truncate">Vlog_Cut.mp4</h4>
-                    <p class="text-xs text-slate-400 mt-1">Вчера, 18:05</p>
                 </div>
             </div>
         </div>
@@ -219,23 +192,8 @@
                 👤
             </div>
             <h2 class="text-xl font-bold">Dani4ka890</h2>
-            <div class="bg-slate-900 px-3 py-1 rounded-full text-sm text-slate-400 mt-2 border border-slate-700">Бесплатный план</div>
+            <div class="bg-slate-900 px-3 py-1 rounded-full text-sm text-slate-400 mt-2 border border-slate-700">Бесплатный план (Реклама за монтаж)</div>
         </div>
-
-        <div class="glass-panel p-5 rounded-2xl mb-6">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="font-semibold text-slate-300">Ваши токены</h3>
-                <span class="text-xl font-bold text-blue-400">0 / 5</span>
-            </div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div class="bg-blue-500 h-full w-0"></div>
-            </div>
-            <p class="text-xs text-slate-400 mt-3">Токены нужны для монтирования видео. Обновляются раз в сутки или покупаются в PRO.</p>
-        </div>
-
-        <button onclick="openPaywall('Апгрейд')" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 text-white font-bold py-4 rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
-            <i class="fa-solid fa-crown"></i> Перейти на PRO
-        </button>
     </main>
 
     <!-- Нижнее навигационное меню -->
@@ -254,122 +212,52 @@
         </button>
     </nav>
 
-    <!-- Всплывающие окна (Настройки, Paywall, Загрузка, Результат) остаются скрытыми поверх всего -->
-    
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-end sm:justify-center transition-opacity">
-        <div id="settings-panel" class="bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border-t border-slate-700 p-6 flex flex-col gap-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transform transition-transform duration-300 translate-y-full max-h-[85vh] overflow-y-auto">
-            
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3 sticky top-0 bg-slate-900 z-10">
+    <!-- Настройки -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-end sm:justify-center">
+        <div id="settings-panel" class="bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border-t border-slate-700 p-6 flex flex-col gap-6 shadow-2xl transform transition-transform duration-300 translate-y-full max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h2 class="text-xl font-bold">Настройки проекта</h2>
-                <button onclick="closeSettings()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 transition active:scale-90">
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-slate-800">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <!-- Формат видео -->
-            <div class="bg-pink-900/10 p-3 rounded-xl border border-pink-500/20">
-                <label class="block text-xs font-semibold text-pink-400 mb-2 uppercase tracking-wide">Формат видео 📱</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="setting-btn active bg-pink-600 text-white rounded-lg py-2 text-xs font-medium border border-pink-500 transition" onclick="selectSetting(this, 'aspectRatio', '9:16 (Reels)', 'bg-pink-600', 'border-pink-500')">9:16</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '16:9 (YouTube)', 'bg-pink-600', 'border-pink-500')">16:9</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '1:1 (Квадрат)', 'bg-pink-600', 'border-pink-500')">1:1</button>
-                </div>
-            </div>
-
-            <!-- Переходы -->
-            <div class="bg-green-900/10 p-3 rounded-xl border border-green-500/20">
-                <label class="block text-xs font-semibold text-green-400 mb-2 uppercase tracking-wide">Стиль склеек 🎞</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="setting-btn active bg-green-600 text-white rounded-lg py-2 text-xs font-medium border border-green-500" onclick="selectSetting(this, 'transition', 'Резкие', 'bg-green-600', 'border-green-500')">Резкие</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'transition', 'Плавные', 'bg-green-600', 'border-green-500')">Плавные</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'transition', 'Глитч', 'bg-green-600', 'border-green-500')">Глитч</button>
-                </div>
-            </div>
-
-            <!-- Музыка -->
-            <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20">
-                <label class="block text-xs font-semibold text-blue-400 mb-2 uppercase tracking-wide">Музыка 🎵</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="setting-btn active bg-blue-600 text-white rounded-lg py-2 text-xs font-medium border border-blue-500" onclick="selectSetting(this, 'music', 'Энергичная', 'bg-blue-600', 'border-blue-500')">Энергичная</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'music', 'Спокойная', 'bg-blue-600', 'border-blue-500')">Спокойная</button>
-                    <button data-col="2" class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 col-span-2" onclick="selectSetting(this, 'music', 'Без музыки', 'bg-blue-600', 'border-blue-500')">Только голос</button>
-                </div>
-            </div>
-
-            <!-- Субтитры -->
-            <div class="bg-purple-900/10 p-3 rounded-xl border border-purple-500/20">
-                <label class="block text-xs font-semibold text-purple-400 mb-2 uppercase tracking-wide">Субтитры 📝</label>
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="setting-btn active bg-purple-600 text-white rounded-lg py-2 text-xs font-medium border border-purple-500" onclick="selectSetting(this, 'subs', 'Желтые', 'bg-purple-600', 'border-purple-500')">Желтые</button>
-                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'subs', 'Белые', 'bg-purple-600', 'border-purple-500')">Белые</button>
-                </div>
-            </div>
-            
-            <!-- Логотип -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">Водяной знак ©</label>
-                <div class="flex items-center gap-3">
-                    <div id="logo-preview" class="w-12 h-12 rounded-xl bg-slate-800 border-2 border-dashed border-slate-600 flex items-center justify-center text-slate-500 overflow-hidden shrink-0">
-                        <i class="fa-solid fa-image"></i>
-                    </div>
-                    <div class="flex-1">
-                        <button class="w-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold py-3 px-4 rounded-xl border border-slate-600 transition active:scale-95" onclick="document.getElementById('logo-upload').click()">
-                            Загрузить логотип
-                        </button>
-                    </div>
-                    <input type="file" id="logo-upload" class="hidden" accept="image/*" onchange="handleLogoUpload(event)">
+                <label class="block text-xs font-semibold text-pink-400 mb-2 uppercase">Формат видео</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="setting-btn active bg-pink-600 text-white rounded-lg py-2 text-xs font-medium border border-pink-500" onclick="selectSetting(this, 'aspectRatio', '9:16', 'bg-pink-600', 'border-pink-500')">9:16</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '16:9', 'bg-pink-600', 'border-pink-500')">16:9</button>
+                    <button class="setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700" onclick="selectSetting(this, 'aspectRatio', '1:1', 'bg-pink-600', 'border-pink-500')">1:1</button>
                 </div>
             </div>
-
-            <button onclick="closeSettings()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition active:scale-95 sticky bottom-0 z-10">
+            <button onclick="closeSettings()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">
                 Применить
             </button>
         </div>
     </div>
 
-    <!-- Paywall Modal (MagicCut PRO) -->
+    <!-- Paywall / Рекламное окно -->
     <div id="paywall-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4">
-        <div class="bg-gradient-to-b from-slate-800 to-slate-900 w-full max-w-sm rounded-3xl p-1 shadow-2xl relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-500/20 to-transparent"></div>
-            
-            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/40">
+        <div class="bg-gradient-to-b from-slate-800 to-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button onclick="closePaywall()" class="absolute top-4 right-4 text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-black/40">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-
-            <div class="p-6 relative z-10">
-                <div class="flex justify-center mb-4">
-                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-white text-3xl shadow-[0_0_20px_rgba(245,158,11,0.4)]">
-                        <i class="fa-solid fa-crown"></i>
-                    </div>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl mx-auto mb-3">
+                    <i class="fa-solid fa-play-circle"></i>
                 </div>
-                
-                <h2 class="text-2xl font-extrabold text-center mb-2">MagicCut <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">PRO</span></h2>
-                <p class="text-center text-slate-400 text-sm mb-6">Бесплатные попытки закончились. Перейдите на PRO для безлимитного монтажа!</p>
-
-                <ul class="space-y-3 mb-8 text-sm text-slate-200">
-                    <li class="flex items-center gap-3"><i class="fa-solid fa-check text-green-400"></i> Без водяных знаков</li>
-                    <li class="flex items-center gap-3"><i class="fa-solid fa-check text-green-400"></i> 4K Качество</li>
-                    <li class="flex items-center gap-3"><i class="fa-solid fa-check text-green-400"></i> Без очереди</li>
-                </ul>
-
-                <button onclick="buyPro()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition active:scale-95 mb-4">
-                    Купить PRO за 890₽/мес
-                </button>
-
-                <div class="relative flex items-center justify-center mb-4">
-                    <div class="border-t border-slate-700 w-full absolute"></div>
-                    <span class="bg-slate-900 px-3 text-xs text-slate-500 relative z-10 uppercase tracking-widest">ИЛИ</span>
-                </div>
-
-                <button onclick="watchAdAndProcess()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-semibold py-3.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play-circle text-blue-400"></i> Посмотреть рекламу (Бесплатно)
-                </button>
+                <h2 class="text-2xl font-extrabold mb-1">Просмотр рекламы</h2>
+                <p class="text-slate-400 text-sm">Чтобы ИИ смонтировал видео бесплатно, посмотрите короткую рекламу.</p>
             </div>
+            <button onclick="watchAdAndProcess()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg mb-3">
+                Посмотреть рекламу и смонтировать
+            </button>
+            <button onclick="buyPro()" class="w-full bg-slate-800 border border-slate-600 text-slate-300 font-semibold py-3 rounded-xl">
+                Купить PRO (без рекламы)
+            </button>
         </div>
     </div>
 
-    <!-- AI Processing Modal -->
+    <!-- Processing Modal -->
     <div id="processing-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-6 text-center">
         <div class="w-24 h-24 relative mb-6">
             <svg class="animate-spin w-full h-full text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -380,103 +268,51 @@
                 <i class="fa-solid fa-microchip text-3xl text-blue-400"></i>
             </div>
         </div>
-        
-        <h2 id="process-title" class="text-2xl font-bold mb-2">Отправка на сервер...</h2>
-        <p id="process-desc" class="text-slate-400 mb-8 max-w-xs text-sm">Подготовка медиафайлов для нейросетей</p>
-
+        <h2 id="process-title" class="text-2xl font-bold mb-2">Монтаж видео через FFmpeg...</h2>
+        <p id="process-desc" class="text-slate-400 mb-8 max-w-xs text-sm">Пожалуйста, подождите, идет обработка на вашем устройстве</p>
         <div class="w-full max-w-sm bg-slate-800 rounded-full h-2 mb-3 overflow-hidden shadow-inner">
-            <div id="process-bar" class="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div id="process-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <div id="process-percent" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">0%</div>
+        <div id="process-percent" class="text-xl font-bold text-blue-400">0%</div>
     </div>
 
     <!-- Result Modal -->
     <div id="result-modal" class="fixed inset-0 bg-slate-900 z-50 hidden flex-col">
-        <header class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900 shadow-md z-10">
+        <header class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900 shadow-md">
             <button onclick="closeResult()" class="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
             <h2 class="font-bold">Готово!</h2>
-            <button class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition">
-                <i class="fa-solid fa-download mr-1"></i> Сохранить
-            </button>
+            <a id="download-btn" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm shadow-lg active:scale-95 transition flex items-center gap-1">
+                <i class="fa-solid fa-download"></i> Сохранить
+            </a>
         </header>
-        
-        <div class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
-            <div class="w-full aspect-video bg-black rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden shadow-2xl">
-                <i class="fa-solid fa-play text-4xl text-white/40"></i>
-            </div>
-            
-            <div class="glass-panel p-5 rounded-xl border border-green-500/30 bg-green-900/10">
-                <h3 class="font-bold text-green-400 mb-3 text-lg"><i class="fa-solid fa-check-double mr-2"></i>Нейросеть завершила работу</h3>
-                <ul class="text-sm text-slate-200 space-y-3">
-                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-pink-400"><i class="fa-solid fa-crop-simple"></i></div> <span id="res-aspect">Формат: 9:16</span></li>
-                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-green-400"><i class="fa-solid fa-film"></i></div> <span id="res-trans">Переходы: Резкие</span></li>
-                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-blue-400"><i class="fa-solid fa-music"></i></div> <span id="res-music">Музыка: Энергичная</span></li>
-                    <li class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-purple-400"><i class="fa-solid fa-closed-captioning"></i></div> <span id="res-subs">Субтитры: Желтые</span></li>
-                </ul>
-            </div>
-
-            <button onclick="closeResult()" class="mt-4 bg-slate-800 border border-slate-700 py-3.5 rounded-xl font-semibold w-full hover:bg-slate-700 transition text-slate-300">
-                Создать новый проект
-            </button>
+        <div class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto items-center justify-center">
+            <video id="result-video" class="w-full max-w-md aspect-video bg-black rounded-xl border border-slate-700 shadow-2xl" controls playsinline></video>
+            <p class="text-green-400 font-semibold text-sm"><i class="fa-solid fa-check-circle mr-1"></i> Видео успешно смонтировано и готово к скачиванию!</p>
         </div>
     </div>
 
     <script>
-        // === Навигация по вкладкам ===
         function switchTab(tabId, btnElement) {
-            // Скрываем все вкладки
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            // Убираем активный класс у всех кнопок меню
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Показываем нужную вкладку
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            // Делаем кнопку активной (синей)
             btnElement.classList.add('active');
         }
 
-        // === Остальная логика (Звук, загрузка, Paywall и т.д.) ===
         let soundEnabled = false;
-        let bgSynth, successSynth;
-
-        async function initAudio() {
-            await Tone.start();
-            bgSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 2, decay: 1, sustain: 0.5, release: 3 } }).toDestination();
-            bgSynth.volume.value = -15;
-            successSynth = new Tone.PolySynth(Tone.Synth, { envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 1 } }).toDestination();
-            successSynth.volume.value = -10;
-        }
-
-        async function toggleSound() {
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
             const btn = document.getElementById('sound-toggle');
-            if (!soundEnabled) {
-                await initAudio();
-                soundEnabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-volume-high text-blue-400"></i>';
-                btn.classList.add('bg-blue-900/30', 'border', 'border-blue-500/50');
-                Tone.Transport.scheduleRepeat((time) => {
-                    if(soundEnabled) bgSynth.triggerAttackRelease([["C3", "E3", "G3"], ["A2", "C3", "E3"]][Math.floor(Math.random() * 2)], "2n", time);
-                }, "4n");
-                Tone.Transport.start();
-            } else {
-                soundEnabled = false;
-                Tone.Transport.stop();
-                btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-slate-400"></i>';
-                btn.classList.remove('bg-blue-900/30', 'border', 'border-blue-500/50');
-            }
+            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high text-blue-400"></i>' : '<i class="fa-solid fa-volume-xmark text-slate-400"></i>';
         }
 
-        function playSuccess() { if (soundEnabled && successSynth) successSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n"); }
-
+        let uploadedFile = null;
         function handleVideoUpload(event) {
             const file = event.target.files[0];
             if (file) {
+                uploadedFile = file;
                 const videoURL = URL.createObjectURL(file);
                 document.getElementById('main-video').src = videoURL;
                 document.getElementById('upload-state').classList.add('hidden');
@@ -485,107 +321,98 @@
             }
         }
 
-        let projectSettings = { aspectRatio: '9:16', transition: 'Резкие', music: 'Энергичная', subs: 'Желтые' };
-
+        let projectSettings = { aspectRatio: '9:16' };
         function openSettings() {
             const modal = document.getElementById('settings-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
             setTimeout(() => document.getElementById('settings-panel').classList.remove('translate-y-full'), 10);
         }
-
         function closeSettings() {
             document.getElementById('settings-panel').classList.add('translate-y-full');
             setTimeout(() => { document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex'); }, 300);
         }
-
         function selectSetting(btn, category, value, bgClass, borderClass) {
-            const siblings = btn.parentElement.querySelectorAll('.setting-btn');
-            siblings.forEach(b => {
-                let isCol = b.getAttribute('data-col') === '2';
-                b.className = `setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700 ${isCol ? 'col-span-2' : ''}`;
+            btn.parentElement.querySelectorAll('.setting-btn').forEach(b => {
+                b.className = "setting-btn bg-slate-800 text-slate-300 rounded-lg py-2 text-xs font-medium border border-slate-700";
             });
-            let isCol = btn.getAttribute('data-col') === '2';
-            btn.className = `setting-btn ${bgClass} text-white ${borderClass} active rounded-lg py-2 text-xs font-medium border ${isCol ? 'col-span-2' : ''}`;
+            btn.className = `setting-btn ${bgClass} text-white ${borderClass} active rounded-lg py-2 text-xs font-medium border`;
             projectSettings[category] = value;
         }
 
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                const preview = document.getElementById('logo-preview');
-                preview.innerHTML = `<img src="${url}" class="w-full h-full object-cover" />`;
-                preview.classList.remove('border-dashed', 'border-slate-600', 'p-2');
+        let pendingTask = '';
+        function requestAdThenProcess(task) {
+            pendingTask = task;
+            document.getElementById('main-video').pause();
+            const paywall = document.getElementById('paywall-modal');
+            paywall.classList.remove('hidden'); paywall.classList.add('flex');
+        }
+        function closePaywall() {
+            const paywall = document.getElementById('paywall-modal');
+            paywall.classList.add('hidden'); paywall.classList.remove('flex');
+        }
+        function buyPro() {
+            closePaywall();
+            alert("Переход на страницу оплаты PRO-версии!");
+            startRealProcessing();
+        }
+        function watchAdAndProcess() {
+            closePaywall();
+            startRealProcessing();
+        }
+
+        async function startRealProcessing() {
+            const modal = document.getElementById('processing-modal');
+            const bar = document.getElementById('process-bar');
+            const percentText = document.getElementById('process-percent');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+
+            try {
+                const { FFmpeg } = FFmpegWASM;
+                const ffmpeg = new FFmpeg();
+                
+                ffmpeg.on('progress', ({ progress }) => {
+                    let p = Math.floor(progress * 100);
+                    bar.style.width = p + '%';
+                    percentText.innerText = p + '%';
+                });
+
+                document.getElementById('process-desc').innerText = "Загрузка движка монтажа...";
+                await ffmpeg.load();
+
+                document.getElementById('process-desc').innerText = "Обработка видеофайла...";
+                const fileData = await uploadedFile.arrayBuffer();
+                await ffmpeg.writeFile('input.mp4', new Uint8Array(fileData));
+
+                // Рендеринг через FFmpeg (ускорение или перекодирование)
+                await ffmpeg.exec(['-i', 'input.mp4', '-vf', 'scale=480:854', 'output.mp4']);
+
+                const data = await ffmpeg.readFile('output.mp4');
+                const blob = new Blob([data.buffer], { type: 'video/mp4' });
+                const outputUrl = URL.createObjectURL(blob);
+
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+                showResult(outputUrl);
+            } catch (err) {
+                console.error(err);
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+                alert("Ошибка обработки видео. Попробуйте файл поменьше.");
             }
         }
 
-        function openPaywall(task) {
-            document.getElementById('main-video').pause();
-            document.getElementById('paywall-modal').classList.remove('hidden'); document.getElementById('paywall-modal').classList.add('flex');
-        }
-        
-        function closePaywall() { document.getElementById('paywall-modal').classList.add('hidden'); document.getElementById('paywall-modal').classList.remove('flex'); }
-        
-        function buyPro() { closePaywall(); playSuccess(); alert("Тут откроется оплата!"); }
-        
-        function watchAdAndProcess() { closePaywall(); startAiProcess(); }
+        function showResult(url) {
+            const resVideo = document.getElementById('result-video');
+            resVideo.src = url;
+            const downloadBtn = document.getElementById('download-btn');
+            downloadBtn.href = url;
+            downloadBtn.download = "MagicCut_Edited.mp4";
 
-        function startAiProcess() {
-            document.getElementById('ai-scanner').style.display = 'block'; 
-            const modal = document.getElementById('processing-modal');
-            const title = document.getElementById('process-title');
-            const desc = document.getElementById('process-desc');
-            const bar = document.getElementById('process-bar');
-            const percentText = document.getElementById('process-percent');
-            
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            
-            const steps = [
-                { title: `Загрузка...`, desc: "Передача медиа на сервер", progress: 12 },
-                { title: "Computer Vision", desc: "OpenCV ищет лица...", progress: 34 },
-                { title: "Анализ звука", desc: "Удаление тишины...", progress: 58 },
-                { title: "Whisper AI", desc: "Генерация субтитров...", progress: 77 },
-                { title: "Рендеринг", desc: "Сборка проекта...", progress: 100 }
-            ];
-
-            let currentStep = 0; bar.style.width = '0%'; percentText.innerText = '0%';
-
-            const interval = setInterval(() => {
-                if (currentStep < steps.length) {
-                    title.innerText = steps[currentStep].title; desc.innerText = steps[currentStep].desc;
-                    bar.style.width = `${steps[currentStep].progress}%`;
-                    let start = parseInt(percentText.innerText); let target = steps[currentStep].progress;
-                    animateValue(percentText, start, target, 400);
-                    currentStep++;
-                } else {
-                    clearInterval(interval);
-                    setTimeout(() => { document.getElementById('ai-scanner').style.display = 'none'; showResult(); }, 800);
-                }
-            }, 1500); 
+            const resultModal = document.getElementById('result-modal');
+            resultModal.classList.remove('hidden'); resultModal.classList.add('flex');
         }
 
-        function animateValue(obj, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
-                if (progress < 1) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
+        function closeResult() {
+            document.getElementById('result-modal').classList.add('hidden'); document.getElementById('result-modal').classList.remove('flex');
         }
-
-        function showResult() {
-            document.getElementById('processing-modal').classList.add('hidden'); document.getElementById('processing-modal').classList.remove('flex');
-            document.getElementById('res-aspect').innerText = `Формат: ${projectSettings.aspectRatio}`;
-            document.getElementById('res-trans').innerText = `Переходы: ${projectSettings.transition}`;
-            document.getElementById('res-music').innerText = `Аудио: ${projectSettings.music}`;
-            document.getElementById('res-subs').innerText = `Текст: ${projectSettings.subs}`;
-            document.getElementById('result-modal').classList.remove('hidden'); document.getElementById('result-modal').classList.add('flex');
-            playSuccess();
-        }
-
-        function closeResult() { document.getElementById('result-modal').classList.add('hidden'); document.getElementById('result-modal').classList.remove('flex'); }
     </script>
 </body>
-    </html>
+            </html>
